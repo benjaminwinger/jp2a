@@ -1,5 +1,5 @@
 /*
- * Copyright 2006, 2015 Christian Stigen Larsen
+ * Copyright 2006, 2015 Christian Stigen Larsen, 2016 Benjamin Winger
  * Distributed under the GNU General Public License (GPL) v2.
  */
 
@@ -16,6 +16,8 @@
 #include "options.h"
 #include "round.h"
 #include "aspect_ratio.h"
+
+#include "palette.h"
 
 typedef void (*image_resize_ptrfun)(const image_t* , image_t*);
 image_resize_ptrfun global_image_resize_fun = NULL;
@@ -244,7 +246,7 @@ void image_print(const image_t *p, FILE *fout) {
 
 	for ( y=0; y < p->h; ++y ) {
 		for ( x=0; x < p->w; ++x, ++pix )
-			line[flipx? p->w - x - 1: x] = lum_palette[RED[pix->r] + GREEN[pix->g] + BLUE[pix->b]];
+			line[flipx? p->w - x - 1: x] = palette != NULL ? palette_find_closest(palette, pix) : lum_palette[RED[pix->r] + GREEN[pix->g] + BLUE[pix->b]];
 
 		fprintf(fout, use_border? "|%s|\n" : "%s\n", line);
 	}

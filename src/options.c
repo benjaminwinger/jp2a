@@ -1,5 +1,5 @@
 /*
- * Copyright 2006, 2015 Christian Stigen Larsen
+ * Copyright 2006, 2015 Christian Stigen Larsen, 2016 Benjamin Winger
  * Distributed under the GNU General Public License (GPL) v2.
  */
 
@@ -27,6 +27,8 @@
 
 #include "jp2a.h"
 #include "options.h"
+#include "image.h"
+#include "palette.h"
 
 // Default options
 int verbose = 0;
@@ -108,6 +110,9 @@ void help() {
 "      --chars=...   Select character palette used to paint the image.\n"
 "                    Leftmost character corresponds to black pixel, right-\n"
 "                    most to white.  Minimum two characters must be specified.\n"
+"      --palette=... File containing character palette stored as a character followed by\n"
+"                    RGB values, all separated by commas. The closest colour will be used for a \n"
+"                    given pixel. If used with --chars the palette takes priority.\n"
 "      --clear       Clears screen before drawing each output image.\n"
 "      --colors      Use ANSI colors in output.\n"
 "  -d, --debug       Print additional debug information.\n"
@@ -238,11 +243,30 @@ void parse_options(int argc, char** argv) {
 					ASCII_PALETTE_SIZE);
 				exit(1);
 			}
-	
+
 			// don't use sscanf, we need to read spaces as well
 			strcpy(ascii_palette, s+8);
 			continue;
 		}
+
+		if ( !strncmp(s, "--palette=", 10) ) {
+			char tmp_file[ASCII_PALETTE_SIZE + 1];
+			strcpy(tmp_file, s+10);
+
+			// read file
+			FILE *fp;
+			if ( (fp = fopen(tmp_file, "rb")) != NULL ) {
+				if ( verbose )
+					fprintf(stderr, "File: %s\n", argv[n]);
+
+				palette = palette_read(fp);
+				continue;
+			} else {
+				fprintf(stderr, "Can't open %s\n", argv[n]);
+				continue;
+			}
+		}
+
 
 		fprintf(stderr, "Unknown option %s\n\n", s);
 		help();

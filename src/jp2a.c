@@ -25,6 +25,7 @@
 #include "jp2a.h"
 #include "options.h"
 #include "image.h"
+#include "palette.h"
 
 #ifdef WIN32
 #ifdef FEAT_CURL
@@ -139,5 +140,6 @@ int main(int argc, char** argv) {
 	if ( fout != stdout )
 		fclose(fout);
 
+	palette_destroy(palette);
 	return 0;
 }
