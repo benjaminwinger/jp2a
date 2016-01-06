@@ -80,59 +80,69 @@ static void image_resize_nearest_neighbour(const image_t* source, image_t* dest)
 
 		for ( x=0; x < dest->w; ++x )
 			destpix[x] = sourcepix[lookupx[x]];
-	
+
 		destpix   += dest->w;
 		sourcepix += sourceadd;
 	}
 }
 
 void image_resize_interpolation(const image_t* source, image_t* dest) {
-	register unsigned int r, g, b;
+	register unsigned long r, g, b;
 
-	const int ynrat = (float)source->h / (float)dest->h;
-	const int xnrat = (float)source->w / (float)dest->w;
+	const float ynrat = (float)source->h / (float)dest->h;
+	const float xnrat = (float)source->w / (float)dest->w;
 
-	const int yinc = ynrat*source->w;
-	const unsigned int adds = xnrat * ynrat;
+	const float yinc = ynrat*source->w;
 
 	register rgb_t* pix = dest->pixels;
 	register rgb_t* pix_next = pix + dest->w;
 
 	register const rgb_t* samp_end;
 	register const rgb_t* src = source->pixels;
-	register const rgb_t* src_end = source->pixels + dest->h*yinc;
-
+	register float xloc = 0, yloc = 0;
+	register const rgb_t* src_end = source->pixels + source->h*source->w;
 	while ( src < src_end ) {
 
-		const rgb_t *sample_start_plus_yinc = src + yinc;
-
-		while ( pix < pix_next ) {
+		float starty = yloc, endy = yloc + ynrat;
+		float startx = xloc, endx = xloc + xnrat;
+		while ( pix < pix_next) {
 
 			r = g = b = 0;
-			samp_end = src + xnrat;
 
-			while ( src < sample_start_plus_yinc ) {
+			src = source->pixels + source->w*(int)yloc + (int)xloc;
+			int pixels = 0;
+			while ( yloc <= endy && yloc <= source->h) {
 
-				while ( src < samp_end ) {
+				while ( xloc <= endx && xloc <= source->w ) {
 					r += src->r;
 					g += src->g;
 					b += src->b;
 					++src;
+					++xloc;
+					++pixels;
 				}
 
-				src += source->w - xnrat;
+				++yloc;
+				xloc = startx;
+				src = source->pixels + source->w*(int)yloc + (int)xloc;
 				samp_end += source->w;
 			}
 
-			pix->r = r/adds;
-			pix->g = g/adds;
-			pix->b = b/adds;
+			if(pixels == 0) pixels = 1;
+			pix->r = r/pixels;
+			pix->g = g/pixels;
+			pix->b = b/pixels;
 
 			++pix;
-			src -= yinc - xnrat;
+			yloc = starty;
+			startx += xnrat;
+			endx =startx + xnrat;
+			++xloc;
+			src = source->pixels + source->w*(int)yloc + (int)xloc;
 		}
-
-		src = sample_start_plus_yinc;
+		yloc += ynrat;
+		xloc = 0;
+		src = source->pixels + source->w*(int)yloc + (int)xloc;
 		pix_next += dest->w;
 	}
 }
